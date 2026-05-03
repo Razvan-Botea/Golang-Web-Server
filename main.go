@@ -66,6 +66,8 @@ func main() {
     mux.HandleFunc("GET /api/healthz", readinessHandler)
     mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
     mux.HandleFunc("POST /api/chirps", apiCfg.chirpHandler)
+    mux.HandleFunc("GET /api/chirps", apiCfg.getChirpsHandler)
+    mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getSingleChirpHandler)
 
     server := &http.Server{
         Addr: ":8080",
@@ -100,6 +102,51 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, r *http.Request) 
         CreatedAt: user.CreatedAt,
         UpdatedAt: user.UpdatedAt,
         Email: user.Email,
+    })
+}
+
+func (cfg *apiConfig) getChirpsHandler(w http.ResponseWriter, r *http.Request) {
+    chirps, err := cfg.dbQueries.GetChirps(r.Context())
+    if err != nil {
+        log.Printf("GetChirps error: %s", err)
+        respondWithError(w, http.StatusInternalServerError, "Couldn't get chirps")
+        return
+    }
+
+    responseChirps := make([]Chirp, len(chirps))
+    for i, chirp := range chirps {
+        responseChirps[i] = Chirp{
+            ID: chirp.ID,
+            CreatedAt: chirp.CreatedAt,
+            UpdatedAt: chirp.UpdatedAt,
+            Body: chirp.Body,
+            UserID: chirp.UserID,
+        }
+    }
+    
+    respondWithJson(w, http.StatusOK, responseChirps)
+}
+
+func (cfg *apiConfig) getSingleChirpHandler(w http.ResponseWriter, r *http.Request) {
+    chirpID, err := uuid.Parse(r.PathValue("chirpID"))
+    if err != nil {
+        respondWithError(w, http.StatusBadRequest, "invalid chirp ID")
+        return 
+    }
+
+    chirp, err := cfg.dbQueries.GetSingleChirp(r.Context(), chirpID)
+    if err != nil {
+        log.Printf("GetChirps error: %s", err)
+        respondWithError(w, 404, "Couldn't get chirps")
+        return
+    }
+
+    respondWithJson(w, http.StatusOK, Chirp{
+        ID: chirp.ID,
+        CreatedAt: chirp.CreatedAt,
+        UpdatedAt: chirp.UpdatedAt,
+        Body: chirp.Body,
+        UserID: chirp.UserID,
     })
 }
 
