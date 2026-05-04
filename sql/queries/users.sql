@@ -12,3 +12,11 @@ DELETE FROM USERS;
 select * 
 from users
 where email = $1;
+
+-- name: UpdateUser :one
+UPDATE users
+set email = $1,
+    hashed_password = $2,
+    updated_at = NOW()
+WHERE id = $3
+RETURNING *;
