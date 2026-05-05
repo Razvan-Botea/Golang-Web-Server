@@ -10,6 +10,12 @@ Select *
 from chirps
 order by created_at;
 
+-- name: GetChirpsByAuthor :many
+Select *
+from chirps
+where user_id = $1
+order by created_at;
+
 -- name: GetSingleChirp :one
 select *
 from chirps
