@@ -20,3 +20,10 @@ set email = $1,
     updated_at = NOW()
 WHERE id = $3
 RETURNING *;
+
+-- name: UpgradeUser :exec
+UPDATE users
+set is_chirpy_red = true,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
